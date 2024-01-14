@@ -1,0 +1,46 @@
+# Persistent Volume.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ananda-db-persistent-volume
+  namespace: server-states
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete # Delete because the actual data is stored on the node.
+  storageClassName: ananda-db-storage-class
+  local:
+    path: /ananda/data/db/
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: "hostname"
+          operator: In
+          values:
+          - "hostname"
+---
+# Persistent Volume Claim.
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ananda-db-persistent-volume-claim
+  namespace: server-states
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ananda-db-storage-class
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Storage Class.
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: ananda-db-storage-class
+  namespace: server-states
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer

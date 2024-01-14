@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: check-server-state
+  namespace: server-states
+spec:
+  restartPolicy: Never
+  containers:
+  - name: check-server-state
+    image: sokrates1989/server-state-checker:DEBUG
+    command: ["python", "src/check_server.py"]
+    envFrom:
+    - configMapRef:
+        name: check-server-state-env
+    - secretRef:
+        name: server-state-checker-secrets
+    resources:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+    volumeMounts:
+      - name: check-server-state-serverinfo-volume
+        mountPath: /code/serverInfo
+      - name: check-server-state-config-txt-vol
+        mountPath: /code/config/
+  volumes:
+    - name: check-server-state-serverinfo-volume
+      persistentVolumeClaim:
+        claimName: check-server-state-serverinfo-persistent-volume-claim
+    - name: check-server-state-config-txt-vol
+      configMap:
+        name: check-server-state-config  
+---
+# Environment Variables.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: check-server-state-env
+  namespace: server-states
+data:
+  serverName: "Test Server Name"
+  errorChatIDs: "-4118499798"
+  warningChatIDs: "-4168789030"
+  infoChatIDs: "-4199369256"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: check-server-state-config
+data:
+  application.properties: |
+    {
+      "messageFrequency":
+      {
+        "info": "55m",
+        "warning": "1d",
+        "error": "3d"
+      },
+      "thresholds":
+      {
+        "timestampAgeMinutes":
+        {
+          "warning":"65",
+          "error":"185"
+        },
+        "cpu":
+        {
+          "warning":"80",
+          "error":"100"
+        },
+        "disk":
+        {
+          "warning":"75",
+          "error":"90"
+        },
+        "memory":
+        {
+          "warning":"75",
+          "error":"90"
+        },
+        "processes":
+        {
+          "warning":"150",
+          "error":"270"
+        },
+        "users":
+        {
+          "warning":"2",
+          "error":"3"
+        },
+        "updates":
+        {
+          "warning":"10",
+          "error":"25"
+        },
+        "system_restart":
+        {
+          "warning":"10d",
+          "error":"50d"
+        },
+        "linux_server_state_tool":
+        {
+          "warning":"1",
+          "error":"5"
+        }
+      }
+    }
+---
+# Persistent Volume serverinfo.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: check-server-state-serverinfo-persistent-volume
+  namespace: server-states
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete # Delete because the actual data is stored on the node.
+  storageClassName: check-server-state-serverinfo-storage-class
+  local:
+    path: /serverInfo/ # Point to the directory where linux server state writes system_info.json to.
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: serverName
+          operator: In
+          values:
+          - "dev-cluster-worker2"
+---
+# Persistent Volume Claim serverinfo.
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: check-server-state-serverinfo-persistent-volume-claim
+  namespace: server-states
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: check-server-state-serverinfo-storage-class
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Storage Class serverinfo.
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: check-server-state-serverinfo-storage-class
+  namespace: server-states
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
