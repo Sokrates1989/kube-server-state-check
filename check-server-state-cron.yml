@@ -32,7 +32,7 @@ spec:
               - name: check-server-state-serverinfo-volume
                 mountPath: /code/serverInfo
               - name: check-server-state-config-txt-vol
-                mountPath: /code/config/
+                mountPath: /code/config
           volumes:
             - name: check-server-state-serverinfo-volume
               persistentVolumeClaim:
