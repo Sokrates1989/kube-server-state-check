@@ -50,6 +50,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: check-server-state-config
+  namespace: server-states
 data:
   application.properties: |
     {
