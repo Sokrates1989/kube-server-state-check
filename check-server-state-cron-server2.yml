@@ -39,7 +39,7 @@ spec:
                 claimName: check-server-state-serverinfo-persistent-volume-claim-server2
             - name: check-server-state-config-txt-vol-server2
               configMap:
-                name: check-server-state-config  -server2
+                name: check-server-state-config-server2
 ---
 # Environment Variables.
 apiVersion: v1
