@@ -1,47 +1,54 @@
-apiVersion: v1
-kind: Pod
+apiVersion: batch/v1
+kind: CronJob
 metadata:
-  name: check-server-state
+  name: check-server-state-cron-server2
   namespace: server-states
 spec:
-  restartPolicy: Never
-  containers:
-  - name: check-server-state
-    image: sokrates1989/server-state-checker:DEBUG
-    command: ["python", "src/check_server.py"]
-    envFrom:
-    - configMapRef:
-        name: check-server-state-env
-    - secretRef:
-        name: server-state-checker-secrets
-    resources:
-      requests:
-        cpu: 50m
-        memory: 50Mi
-      limits:
-        cpu: 500m
-        memory: 500Mi
-    volumeMounts:
-      - name: check-server-state-serverinfo-volume
-        mountPath: /code/serverInfo
-      - name: check-server-state-config-txt-vol
-        mountPath: /code/config
-  volumes:
-    - name: check-server-state-serverinfo-volume
-      persistentVolumeClaim:
-        claimName: check-server-state-serverinfo-persistent-volume-claim
-    - name: check-server-state-config-txt-vol
-      configMap:
-        name: check-server-state-config  
+  schedule: "0 * * * *" # crontab based schedule
+  successfulJobsHistoryLimit: 3  # Set the number of successful jobs to retain
+  failedJobsHistoryLimit: 3      # Set the number of failed jobs to retain
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: check-server-state-server2
+            image: sokrates1989/server-state-checker:DEBUG
+            command: ["python", "src/check_server.py"]
+            envFrom:
+            - configMapRef:
+                name: check-server-state-env-server2
+            - secretRef:
+                name: server-state-checker-secrets
+            resources:
+              requests:
+                cpu: 50m
+                memory: 50Mi
+              limits:
+                cpu: 500m
+                memory: 500Mi
+            volumeMounts:
+              - name: check-server-state-serverinfo-volume-server2
+                mountPath: /code/serverInfo
+              - name: check-server-state-config-txt-vol-server2
+                mountPath: /code/config
+          volumes:
+            - name: check-server-state-serverinfo-volume-server2
+              persistentVolumeClaim:
+                claimName: check-server-state-serverinfo-persistent-volume-claim-server2
+            - name: check-server-state-config-txt-vol-server2
+              configMap:
+                name: check-server-state-config  -server2
 ---
 # Environment Variables.
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: check-server-state-env
+  name: check-server-state-env-server2
   namespace: server-states
 data:
-  serverName: "Test Server Name"
+  serverName: "Server 2"
   errorChatIDs: "-4118499798"
   warningChatIDs: "-4168789030"
   infoChatIDs: "-4199369256"
@@ -49,7 +56,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: check-server-state-config
+  name: check-server-state-config-server2
   namespace: server-states
 data:
   config.txt: |
@@ -114,7 +121,7 @@ data:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: check-server-state-serverinfo-persistent-volume
+  name: check-server-state-serverinfo-persistent-volume-server2
   namespace: server-states
 spec:
   capacity:
@@ -122,7 +129,7 @@ spec:
   accessModes:
   - ReadWriteOnce
   persistentVolumeReclaimPolicy: Delete # Delete because the actual data is stored on the node.
-  storageClassName: check-server-state-serverinfo-storage-class
+  storageClassName: check-server-state-serverinfo-storage-class-server2
   local:
     path: /serverInfo/ # Point to the directory where linux server state writes system_info.json to.
   nodeAffinity:
@@ -135,15 +142,15 @@ spec:
           - "dev-cluster-worker2"
 ---
 # Persistent Volume Claim serverinfo.
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  name: check-server-state-serverinfo-persistent-volume-claim
+  name: check-server-state-serverinfo-persistent-volume-claim-server2
   namespace: server-states
 spec:
   accessModes:
   - ReadWriteOnce
-  storageClassName: check-server-state-serverinfo-storage-class
+  storageClassName: check-server-state-serverinfo-storage-class-server2
   resources:
     requests:
       storage: 10Gi
@@ -152,7 +159,7 @@ spec:
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: check-server-state-serverinfo-storage-class
+  name: check-server-state-serverinfo-storage-class-server2
   namespace: server-states
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
