@@ -8,7 +8,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: check-server-state-server2
-    image: sokrates1989/server-state-checker:1.1.0
+    image: sokrates1989/server-state-checker:1.1.1
     command: ["python", "src/check_server.py"]
     envFrom:
     - configMapRef:
