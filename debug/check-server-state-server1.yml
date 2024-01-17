@@ -44,7 +44,7 @@ data:
   serverName: "Server 1"
   errorChatIDs: "-4118499798"
   warningChatIDs: "-4168789030"
-  infoChatIDs: "-4199369256"
+  infoChatIDs: "-4194492654"
 ---
 apiVersion: v1
 kind: ConfigMap
