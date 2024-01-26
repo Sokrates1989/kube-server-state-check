@@ -14,7 +14,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: check-server-state-server1
-            image: sokrates1989/server-state-checker:1.1.1
+            image: sokrates1989/server-state-checker:2.0.0
             command: ["python", "src/check_server.py"]
             envFrom:
             - configMapRef:
@@ -63,7 +63,7 @@ data:
     {
       "messageFrequency":
       {
-        "info": "55m",
+        "info": "1",
         "warning": "1d",
         "error": "3d"
       },
@@ -88,6 +88,21 @@ data:
         {
           "warning":"75",
           "error":"90"
+        },
+        "network_up":
+        {
+          "warning":"0",
+          "error":"0"
+        },
+        "network_down":
+        {
+          "warning":"0",
+          "error":"0"
+        },
+        "network_total":
+        {
+          "warning":"50000000",
+          "error":"100000000"
         },
         "processes":
         {
