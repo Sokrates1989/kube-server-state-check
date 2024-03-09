@@ -1,0 +1,185 @@
+apiVersion: v1
+
+kind: Pod
+metadata:
+  name: check-server-state-ubunutu-mini
+  namespace: server-states
+spec:
+  restartPolicy: Never
+  containers:
+  - name: check-server-state-ubunutu-mini
+    image: sokrates1989/server-state-checker:2.1.1
+    command: ["python", "src/check_server.py"]
+    envFrom:
+    - configMapRef:
+        name: check-server-state-env-ubunutu-mini
+    - secretRef:
+        name: server-state-checker-secrets
+    resources:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+    volumeMounts:
+      - name: check-server-state-serverinfo-volume-ubunutu-mini
+        mountPath: /code/serverInfo
+      - name: check-server-state-config-txt-vol-ubunutu-mini
+        mountPath: /code/config
+  volumes:
+    - name: check-server-state-serverinfo-volume-ubunutu-mini
+      persistentVolumeClaim:
+        claimName: check-server-state-serverinfo-persistent-volume-claim-ubunutu-mini
+    - name: check-server-state-config-txt-vol-ubunutu-mini
+      configMap:
+        name: check-server-state-config-ubunutu-mini
+---
+# Environment Variables.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: check-server-state-env-ubunutu-mini
+  namespace: server-states
+data:
+  serverName: "Ubuntu Mini @Home"
+  gluster_not_installed_handling: "error"
+  errorChatIDs: "-4118499798"
+  warningChatIDs: "-4168789030"
+  infoChatIDs: "-4106806355"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: check-server-state-config-ubunutu-mini
+  namespace: server-states
+data:
+  config.txt: |
+    {
+      "messageFrequency":
+      {
+        "info": "1",
+        "warning": "1d",
+        "error": "3d"
+      },
+      "thresholds":
+      {
+        "timestampAgeMinutes":
+        {
+          "warning":"65",
+          "error":"185"
+        },
+        "cpu":
+        {
+          "warning":"80",
+          "error":"100"
+        },
+        "disk":
+        {
+          "warning":"75",
+          "error":"90"
+        },
+        "memory":
+        {
+          "warning":"75",
+          "error":"90"
+        },
+        "network_up":
+        {
+          "warning":"0",
+          "error":"0"
+        },
+        "network_down":
+        {
+          "warning":"0",
+          "error":"0"
+        },
+        "network_total":
+        {
+          "warning":"50000000",
+          "error":"100000000"
+        },
+        "processes":
+        {
+          "warning":"270",
+          "error":"310"
+        },
+        "users":
+        {
+          "warning":"2",
+          "error":"3"
+        },
+        "updates":
+        {
+          "warning":"10",
+          "error":"25"
+        },
+        "system_restart":
+        {
+          "warning":"10d",
+          "error":"50d"
+        },
+        "linux_server_state_tool":
+        {
+          "warning":"1",
+          "error":"5"
+        },
+        "gluster_unhealthy_peers":
+        {
+            "warning":"1",
+            "error":"2"
+        },
+        "gluster_unhealthy_volumes":
+        {
+            "warning":"1",
+            "error":"1"
+        }
+      }
+    }
+---
+# Persistent Volume serverinfo.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: check-server-state-serverinfo-persistent-volume-ubunutu-mini
+  namespace: server-states
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete # Delete because the actual data is stored on the node.
+  storageClassName: check-server-state-serverinfo-storage-class-ubunutu-mini
+  local:
+    path: /serverInfo/ # Point to the directory where linux server state writes system_info.json to.
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: serverName
+          operator: In
+          values:
+          - "ubunutu-mini"
+---
+# Persistent Volume Claim serverinfo.
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: check-server-state-serverinfo-persistent-volume-claim-ubunutu-mini
+  namespace: server-states
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: check-server-state-serverinfo-storage-class-ubunutu-mini
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Storage Class serverinfo.
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: check-server-state-serverinfo-storage-class-ubunutu-mini
+  namespace: server-states
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
