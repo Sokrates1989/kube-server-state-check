@@ -2,17 +2,17 @@ apiVersion: v1
 
 kind: Pod
 metadata:
-  name: check-server-state-ubunutu-mini
+  name: check-server-state-ubuntu-mini
   namespace: server-states
 spec:
   restartPolicy: Never
   containers:
-  - name: check-server-state-ubunutu-mini
+  - name: check-server-state-ubuntu-mini
     image: sokrates1989/server-state-checker:2.1.1
     command: ["python", "src/check_server.py"]
     envFrom:
     - configMapRef:
-        name: check-server-state-env-ubunutu-mini
+        name: check-server-state-env-ubuntu-mini
     - secretRef:
         name: server-state-checker-secrets
     resources:
@@ -23,23 +23,23 @@ spec:
         cpu: 500m
         memory: 500Mi
     volumeMounts:
-      - name: check-server-state-serverinfo-volume-ubunutu-mini
+      - name: check-server-state-serverinfo-volume-ubuntu-mini
         mountPath: /code/serverInfo
-      - name: check-server-state-config-txt-vol-ubunutu-mini
+      - name: check-server-state-config-txt-vol-ubuntu-mini
         mountPath: /code/config
   volumes:
-    - name: check-server-state-serverinfo-volume-ubunutu-mini
+    - name: check-server-state-serverinfo-volume-ubuntu-mini
       persistentVolumeClaim:
-        claimName: check-server-state-serverinfo-persistent-volume-claim-ubunutu-mini
-    - name: check-server-state-config-txt-vol-ubunutu-mini
+        claimName: check-server-state-serverinfo-persistent-volume-claim-ubuntu-mini
+    - name: check-server-state-config-txt-vol-ubuntu-mini
       configMap:
-        name: check-server-state-config-ubunutu-mini
+        name: check-server-state-config-ubuntu-mini
 ---
 # Environment Variables.
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: check-server-state-env-ubunutu-mini
+  name: check-server-state-env-ubuntu-mini
   namespace: server-states
 data:
   serverName: "Ubuntu Mini @Home"
@@ -51,7 +51,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: check-server-state-config-ubunutu-mini
+  name: check-server-state-config-ubuntu-mini
   namespace: server-states
 data:
   config.txt: |
@@ -141,7 +141,7 @@ data:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: check-server-state-serverinfo-persistent-volume-ubunutu-mini
+  name: check-server-state-serverinfo-persistent-volume-ubuntu-mini
   namespace: server-states
 spec:
   capacity:
@@ -149,7 +149,7 @@ spec:
   accessModes:
   - ReadWriteOnce
   persistentVolumeReclaimPolicy: Delete # Delete because the actual data is stored on the node.
-  storageClassName: check-server-state-serverinfo-storage-class-ubunutu-mini
+  storageClassName: check-server-state-serverinfo-storage-class-ubuntu-mini
   local:
     path: /serverInfo/ # Point to the directory where linux server state writes system_info.json to.
   nodeAffinity:
@@ -159,18 +159,18 @@ spec:
         - key: serverName
           operator: In
           values:
-          - "ubunutu-mini"
+          - "ubuntu-mini"
 ---
 # Persistent Volume Claim serverinfo.
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: check-server-state-serverinfo-persistent-volume-claim-ubunutu-mini
+  name: check-server-state-serverinfo-persistent-volume-claim-ubuntu-mini
   namespace: server-states
 spec:
   accessModes:
   - ReadWriteOnce
-  storageClassName: check-server-state-serverinfo-storage-class-ubunutu-mini
+  storageClassName: check-server-state-serverinfo-storage-class-ubuntu-mini
   resources:
     requests:
       storage: 10Gi
@@ -179,7 +179,7 @@ spec:
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: check-server-state-serverinfo-storage-class-ubunutu-mini
+  name: check-server-state-serverinfo-storage-class-ubuntu-mini
   namespace: server-states
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
