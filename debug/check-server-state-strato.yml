@@ -1,0 +1,174 @@
+apiVersion: v1
+
+kind: Pod
+metadata:
+  name: check-server-state-strato-worker
+  namespace: server-states
+spec:
+  restartPolicy: Never
+  containers:
+  - name: check-server-state-strato-worker
+    image: sokrates1989/server-state-checker:2.1.1
+    command: ["python", "src/check_server.py"]
+    envFrom:
+    - configMapRef:
+        name: check-server-state-env-strato-worker
+    - secretRef:
+        name: server-state-checker-secrets
+    resources:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+    volumeMounts:
+      - name: check-server-state-serverinfo-volume-strato-worker
+        mountPath: /code/serverInfo
+      - name: check-server-state-config-txt-vol-strato-worker
+        mountPath: /code/config
+  volumes:
+    - name: check-server-state-serverinfo-volume-strato-worker
+      persistentVolumeClaim:
+        claimName: check-server-state-serverinfo-persistent-volume-claim-strato-worker
+    - name: check-server-state-config-txt-vol-strato-worker
+      configMap:
+        name: check-server-state-config-strato-worker
+---
+# Environment Variables.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: check-server-state-env-strato-worker
+  namespace: server-states
+data:
+  serverName: "Strato Worker Node"
+  errorChatIDs: "-4118499798"
+  warningChatIDs: "-4168789030"
+  infoChatIDs: "-4106806355"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: check-server-state-config-strato-worker
+  namespace: server-states
+data:
+  config.txt: |
+    {
+      "messageFrequency":
+      {
+        "info": "1",
+        "warning": "1d",
+        "error": "3d"
+      },
+      "thresholds":
+      {
+        "timestampAgeMinutes":
+        {
+          "warning":"65",
+          "error":"185"
+        },
+        "cpu":
+        {
+          "warning":"80",
+          "error":"100"
+        },
+        "disk":
+        {
+          "warning":"75",
+          "error":"90"
+        },
+        "memory":
+        {
+          "warning":"75",
+          "error":"90"
+        },
+        "network_up":
+        {
+          "warning":"0",
+          "error":"0"
+        },
+        "network_down":
+        {
+          "warning":"0",
+          "error":"0"
+        },
+        "network_total":
+        {
+          "warning":"50000000",
+          "error":"100000000"
+        },
+        "processes":
+        {
+          "warning":"150",
+          "error":"270"
+        },
+        "users":
+        {
+          "warning":"2",
+          "error":"3"
+        },
+        "updates":
+        {
+          "warning":"10",
+          "error":"25"
+        },
+        "system_restart":
+        {
+          "warning":"10d",
+          "error":"50d"
+        },
+        "linux_server_state_tool":
+        {
+          "warning":"1",
+          "error":"5"
+        }
+      }
+    }
+---
+# Persistent Volume serverinfo.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: check-server-state-serverinfo-persistent-volume-strato-worker
+  namespace: server-states
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete # Delete because the actual data is stored on the node.
+  storageClassName: check-server-state-serverinfo-storage-class-strato-worker
+  local:
+    path: /serverInfo/ # Point to the directory where linux server state writes system_info.json to.
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: serverName
+          operator: In
+          values:
+          - "strato-worker"
+---
+# Persistent Volume Claim serverinfo.
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: check-server-state-serverinfo-persistent-volume-claim-strato-worker
+  namespace: server-states
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: check-server-state-serverinfo-storage-class-strato-worker
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Storage Class serverinfo.
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: check-server-state-serverinfo-storage-class-strato-worker
+  namespace: server-states
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
