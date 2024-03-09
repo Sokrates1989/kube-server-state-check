@@ -14,7 +14,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: check-server-state-server2
-            image: sokrates1989/server-state-checker:2.0.0
+            image: sokrates1989/server-state-checker:2.1.1
             command: ["python", "src/check_server.py"]
             envFrom:
             - configMapRef:
@@ -49,6 +49,7 @@ metadata:
   namespace: server-states
 data:
   serverName: "Server 2"
+  gluster_not_installed_handling: "error"
   errorChatIDs: "-4118499798"
   warningChatIDs: "-4168789030"
   infoChatIDs: "-4106806355"
@@ -128,6 +129,16 @@ data:
         {
           "warning":"1",
           "error":"5"
+        },
+        "gluster_unhealthy_peers":
+        {
+            "warning":"1",
+            "error":"2"
+        },
+        "gluster_unhealthy_volumes":
+        {
+            "warning":"1",
+            "error":"1"
         }
       }
     }
